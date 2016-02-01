@@ -17,7 +17,7 @@ string crc32(string file) {
 
 int main(string[] args) {
     if (args.length == 1) {
-        stderr.writeln("Usage: crc32 FILES...");
+        stderr.writeln("Usage: crc32 FILE...");
         return 1;
     }
 
