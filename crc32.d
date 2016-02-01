@@ -7,7 +7,7 @@ import std.digest.crc;
 
 string crc32(string file) {
     try {
-        return file.read.crc32Of.toHexString.toLower;
+        return file.read.crc32Of.reverse.toHexString.toLower;
     }
     catch (FileException ex) {
         stderr.writeln(ex.msg);
