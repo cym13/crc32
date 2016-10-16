@@ -1,12 +1,8 @@
 #!/usr/bin/env rdmd
 
-import std.uni;
 import std.file;
 import std.stdio;
-import std.getopt;
-import std.digest.crc;
-
-import core.stdc.stdlib: exit;
+import std.algorithm;
 
 enum vernum = "2.0.0";
 
@@ -22,52 +18,71 @@ Arguments:
 
 Options:
     -h, --help      Print this help and exit
-    -v, --version   Print version and copyright info and exit
+    -v, --version   Print version and exit
     -r, --recursive Traverse subdirectories recursively
-    -q, --quiet     Suppress warnings
 EOF";
 
+/**
+ * Computes the crc32 checksum of a file and returns it as a string
+ */
 string crc32(File chunks) {
-       return chunks.byChunk(8192)
-                    .crc32Of
-                    .reverse
-                    .toHexString
-                    .toLower;
-}
+    import std.uni;
+    import std.digest.crc;
 
-string fileCrc32(string path) {
-    try {
-        return File(file, "rb").crc32;
-    }
-    catch (FileException ex) {
-        stderr.writeln(ex.msg);
-        return null;
-    }
-}
-
-string dirCrc32(string path) {
+    return chunks.byChunk(8192)
+                 .crc32Of
+                 .reverse
+                 .toHexString
+                 .toLower;
 }
 
 int main(string[] args) {
-    bool quiet;
-    bool recursive;
+    import std.getopt:       getopt;
+    import std.array:        array;
+    import core.stdc.stdlib: exit;
+
+    auto spanmode = SpanMode.shallow;
 
     getopt(args,
-        "quiet|q",     &quiet,
-        "recursive|r", &recursive,
-        "version|v",   { vernum.writeln; exit(0); },
-        "help|h",      {   help.writeln; exit(0); },
+        "recursive|r", { spanmode = SpanMode.depth; },
+        "version|v",   { writeln("crc32 ", vernum); exit(0); },
+        "help|h",      { writeln(help); exit(0); },
     );
 
+    // Without arguments, use stdin
     if (args[1..$].length == 0) {
         writeln(stdin.crc32);
         return 0;
     }
 
-    foreach (file ; args[1..$]) {
-        immutable crc = file.fileCrc32;
-        if (crc || quiet)
-            writefln("%s\t%s", crc, file);
+    // Make list of inputs
+    string[] fileList = args[1..$].filter!isFile.array;
+
+    // Add inputs from directory arguments
+    args[1..$].filter!isDir
+              .map!(d => dirEntries(d, spanmode))
+              .each!((dir) => fileList ~= dir.map!(e => e.name)
+                                             .filter!isFile
+                                             .array);
+
+    // Remove duplicates
+    sort(fileList);
+    fileList = fileList.uniq.array;
+
+    foreach (f ; fileList) {
+        File file;
+        scope(exit) file.close;
+
+        try {
+            file = File(f, "rb");
+        } catch(FileException ex) {
+            stderr.write(ex.msg);
+            continue;
+        }
+
+        auto crc = file.crc32;
+        if (crc)
+            writefln("%s\t%s", crc, f);
     }
 
     return 0;
