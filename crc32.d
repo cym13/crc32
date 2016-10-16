@@ -45,8 +45,8 @@ int main(string[] args) {
 
     getopt(args,
         "recursive|r", { spanmode = SpanMode.depth; },
-        "version|v",   { writeln("crc32 ", vernum); exit(0); },
-        "help|h",      { writeln(help); exit(0); },
+        "version|v",   { writeln("crc32 v", vernum); exit(0); },
+        "help|h",      { write(help); exit(0); },
     );
 
     // Without arguments, use stdin

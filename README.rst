@@ -9,7 +9,18 @@ Usage
 
 ::
 
-    Usage: crc32 FILE...
+    Usage: crc32 [options] [FILE...]
+
+    Arguments:
+        FILE  The file to compute the checksum of
+              If FILE is a directory all files within it will be taken
+              If FILE is missing the standard input is taken
+
+    Options:
+        -h, --help      Print this help and exit
+        -v, --version   Print version and exit
+        -r, --recursive Traverse subdirectories recursively
+
 
 Dependencies
 ============
